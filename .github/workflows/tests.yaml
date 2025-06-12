@@ -35,3 +35,20 @@ jobs:
         run: make build-web test
       - name: Codecov
         uses: codecov/codecov-action@v2
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+      - use: golangci/golangci-lint-action@v8
+        with:
+          working-directory: src/
+          args: --build-tags=dev
