@@ -129,7 +129,7 @@ class Utils {
     static replaceIllegalChar(str: string): string {
         // Replace illegal characters: / \ : * ? " < > |
         // Also replace trailing dots and spaces
-        const reg = /[\/\\:\*\?"\<\>\|]|[\.\s]+$/g;
+        const reg = /[/\\:*?"<>|]|[.\s]+$/g;
         let result = str;
         while (reg.test(result)) {
             reg.lastIndex = 0; // Reset regex lastIndex for global flag
