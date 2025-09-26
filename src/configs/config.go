@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"time"
 
@@ -214,6 +215,12 @@ func (c *Config) Verify() error {
 	if !c.RPC.Enable && len(c.LiveRooms) == 0 {
 		return fmt.Errorf("the RPC is not enabled, and no live room is set. the program has nothing to do using this setting")
 	}
+	
+	// Validate platform configurations
+	if err := c.ValidatePlatformConfigs(); err != nil {
+		return err
+	}
+	
 	return nil
 }
 
@@ -381,4 +388,72 @@ func (r *ResolvedConfig) applyOverrides(override *OverridableConfig) {
 	if override.TimeoutInUs != nil {
 		r.TimeoutInUs = *override.TimeoutInUs
 	}
+}
+
+// GetPlatformKeyFromUrl extracts a platform key from a URL that can be used for config lookups
+func GetPlatformKeyFromUrl(urlStr string) string {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return ""
+	}
+	
+	// Map domain names to consistent platform keys
+	domainToPlatformMap := map[string]string{
+		"live.bilibili.com":   "bilibili",
+		"live.douyin.com":     "douyin", 
+		"v.douyin.com":        "douyin",
+		"www.douyu.com":       "douyu",
+		"live.kuaishou.com":   "kuaishou",
+		"www.yy.com":          "yy",
+		"live.acfun.cn":       "acfun",
+		"www.lang.live":       "lang",
+		"fm.missevan.com":     "missevan",
+		"www.openrec.tv":      "openrec",
+		"weibo.com":           "weibolive",
+		"live.weibo.com":      "weibolive",
+		"xhslink.com":         "xiaohongshu",
+		"www.xiaohongshu.com": "xiaohongshu",
+		"www.yizhibo.com":     "yizhibo",
+	}
+	
+	if platform, exists := domainToPlatformMap[u.Host]; exists {
+		return platform
+	}
+	
+	// Fallback to host name
+	return u.Host
+}
+
+// GetEffectiveConfigForRoom returns the effective configuration for a room
+func (c *Config) GetEffectiveConfigForRoom(roomUrl string) ResolvedConfig {
+	platformKey := GetPlatformKeyFromUrl(roomUrl)
+	room, err := c.GetLiveRoomByUrl(roomUrl)
+	if err != nil {
+		// If room not found, create a minimal room for resolution
+		room = &LiveRoom{Url: roomUrl}
+	}
+	return c.ResolveConfigForRoom(room, platformKey)
+}
+
+// ValidatePlatformConfigs validates platform configurations for consistency
+func (c *Config) ValidatePlatformConfigs() error {
+	for platformKey, platformConfig := range c.PlatformConfigs {
+		// Validate interval values
+		if platformConfig.Interval != nil && *platformConfig.Interval <= 0 {
+			return fmt.Errorf("platform '%s': interval must be greater than 0", platformKey)
+		}
+		
+		// Validate min access interval
+		if platformConfig.MinAccessIntervalSec < 0 {
+			return fmt.Errorf("platform '%s': min_access_interval_sec cannot be negative", platformKey)
+		}
+		
+		// Validate paths if specified
+		if platformConfig.OutPutPath != nil {
+			if _, err := os.Stat(*platformConfig.OutPutPath); os.IsNotExist(err) {
+				return fmt.Errorf("platform '%s': output path '%s' does not exist", platformKey, *platformConfig.OutPutPath)
+			}
+		}
+	}
+	return nil
 }
