@@ -10,7 +10,7 @@ debug: false
 # Global settings (can be overridden)
 interval: 30                    # Global check interval: 30 seconds
 out_put_path: ./recordings      # Global output path
-ffmpeg_path: /usr/bin/ffmpeg    # Global ffmpeg path
+ffmpeg_path: ""                 # Global ffmpeg path - empty to skip validation
 
 log:
   out_put_folder: ./logs
