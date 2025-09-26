@@ -61,6 +61,26 @@ type Log struct {
 	SaveEveryLog bool   `yaml:"save_every_log"`
 }
 
+// OverridableConfig contains settings that can be overridden at different levels
+type OverridableConfig struct {
+	Interval             *int                  `yaml:"interval,omitempty"`
+	OutPutPath           *string               `yaml:"out_put_path,omitempty"`
+	FfmpegPath           *string               `yaml:"ffmpeg_path,omitempty"`
+	Log                  *Log                  `yaml:"log,omitempty"`
+	Feature              *Feature              `yaml:"feature,omitempty"`
+	OutputTmpl           *string               `yaml:"out_put_tmpl,omitempty"`
+	VideoSplitStrategies *VideoSplitStrategies `yaml:"video_split_strategies,omitempty"`
+	OnRecordFinished     *OnRecordFinished     `yaml:"on_record_finished,omitempty"`
+	TimeoutInUs          *int                  `yaml:"timeout_in_us,omitempty"`
+}
+
+// PlatformConfig contains platform-specific settings
+type PlatformConfig struct {
+	OverridableConfig    `yaml:",inline"`
+	Name                 string `yaml:"name"`
+	MinAccessIntervalSec int    `yaml:"min_access_interval_sec,omitempty"` // Minimum seconds between platform access
+}
+
 // Config content all config info.
 type Config struct {
 	File                 string               `yaml:"-"`
@@ -77,6 +97,9 @@ type Config struct {
 	Cookies              map[string]string    `yaml:"cookies"`
 	OnRecordFinished     OnRecordFinished     `yaml:"on_record_finished"`
 	TimeoutInUs          int                  `yaml:"timeout_in_us"`
+
+	// New hierarchical config fields
+	PlatformConfigs map[string]PlatformConfig `yaml:"platform_configs,omitempty"`
 
 	liveRoomIndexCache map[string]int
 }
@@ -98,6 +121,9 @@ type LiveRoom struct {
 	Quality     int          `yaml:"quality,omitempty"`
 	AudioOnly   bool         `yaml:"audio_only,omitempty"`
 	NickName    string       `yaml:"nick_name,omitempty"`
+	
+	// Room-level overridable configuration
+	OverridableConfig `yaml:",inline"`
 }
 
 type liveRoomAlias LiveRoom
@@ -157,12 +183,14 @@ var defaultConfig = Config{
 		ConvertToMp4:          false,
 		DeleteFlvAfterConvert: false,
 	},
-	TimeoutInUs: 60000000,
+	TimeoutInUs:     60000000,
+	PlatformConfigs: map[string]PlatformConfig{},
 }
 
 func NewConfig() *Config {
 	config := defaultConfig
 	config.liveRoomIndexCache = map[string]int{}
+	config.PlatformConfigs = map[string]PlatformConfig{}
 	return &config
 }
 
@@ -233,6 +261,15 @@ func NewConfigWithBytes(b []byte) (*Config, error) {
 	if err := yaml.Unmarshal(b, &config); err != nil {
 		return nil, err
 	}
+	
+	// Ensure maps are initialized for backwards compatibility
+	if config.PlatformConfigs == nil {
+		config.PlatformConfigs = map[string]PlatformConfig{}
+	}
+	if config.liveRoomIndexCache == nil {
+		config.liveRoomIndexCache = map[string]int{}
+	}
+	
 	config.RefreshLiveRoomIndexCache()
 	return &config, nil
 }
@@ -266,4 +303,82 @@ func (c Config) GetFilePath() (string, error) {
 		return "", errors.New("config path not set")
 	}
 	return c.File, nil
+}
+
+// ResolveConfigForRoom resolves the final configuration values for a specific room
+// by merging global -> platform -> room level configurations
+func (c *Config) ResolveConfigForRoom(room *LiveRoom, platformName string) ResolvedConfig {
+	resolved := ResolvedConfig{
+		Interval:             c.Interval,
+		OutPutPath:           c.OutPutPath,
+		FfmpegPath:           c.FfmpegPath,
+		Log:                  c.Log,
+		Feature:              c.Feature,
+		OutputTmpl:           c.OutputTmpl,
+		VideoSplitStrategies: c.VideoSplitStrategies,
+		OnRecordFinished:     c.OnRecordFinished,
+		TimeoutInUs:          c.TimeoutInUs,
+	}
+
+	// Apply platform-level overrides
+	if platformConfig, exists := c.PlatformConfigs[platformName]; exists {
+		resolved.applyOverrides(&platformConfig.OverridableConfig)
+	}
+
+	// Apply room-level overrides
+	resolved.applyOverrides(&room.OverridableConfig)
+
+	return resolved
+}
+
+// GetPlatformMinAccessInterval returns the minimum access interval for a platform
+func (c *Config) GetPlatformMinAccessInterval(platformName string) int {
+	if platformConfig, exists := c.PlatformConfigs[platformName]; exists {
+		return platformConfig.MinAccessIntervalSec
+	}
+	return 0 // No limit if not specified
+}
+
+// ResolvedConfig contains the final resolved configuration values for a room
+type ResolvedConfig struct {
+	Interval             int
+	OutPutPath           string
+	FfmpegPath           string
+	Log                  Log
+	Feature              Feature
+	OutputTmpl           string
+	VideoSplitStrategies VideoSplitStrategies
+	OnRecordFinished     OnRecordFinished
+	TimeoutInUs          int
+}
+
+// applyOverrides applies non-nil values from overridable config to resolved config
+func (r *ResolvedConfig) applyOverrides(override *OverridableConfig) {
+	if override.Interval != nil {
+		r.Interval = *override.Interval
+	}
+	if override.OutPutPath != nil {
+		r.OutPutPath = *override.OutPutPath
+	}
+	if override.FfmpegPath != nil {
+		r.FfmpegPath = *override.FfmpegPath
+	}
+	if override.Log != nil {
+		r.Log = *override.Log
+	}
+	if override.Feature != nil {
+		r.Feature = *override.Feature
+	}
+	if override.OutputTmpl != nil {
+		r.OutputTmpl = *override.OutputTmpl
+	}
+	if override.VideoSplitStrategies != nil {
+		r.VideoSplitStrategies = *override.VideoSplitStrategies
+	}
+	if override.OnRecordFinished != nil {
+		r.OnRecordFinished = *override.OnRecordFinished
+	}
+	if override.TimeoutInUs != nil {
+		r.TimeoutInUs = *override.TimeoutInUs
+	}
 }
