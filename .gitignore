@@ -169,3 +169,11 @@ node_modules
 .vscode
 
 !src/cmd/build/
+
+# Build artifacts
+bililive
+coverage.txt
+
+# Example configs
+config.hierarchical.example.yml
+HIERARCHICAL_CONFIG.md

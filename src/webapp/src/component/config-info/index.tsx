@@ -36,13 +36,27 @@ interface IState {
   selectedPlatform: string;
 }
 
-// Platform configurations
+// 平台配置列表 - 包含所有支持的直播平台
 const PLATFORM_OPTIONS = [
   { key: 'bilibili', name: '哔哩哔哩', domain: 'live.bilibili.com' },
   { key: 'douyin', name: '抖音', domain: 'live.douyin.com' },
   { key: 'douyu', name: '斗鱼', domain: 'www.douyu.com' },
+  { key: 'huya', name: '虎牙', domain: 'www.huya.com' },
   { key: 'kuaishou', name: '快手', domain: 'live.kuaishou.com' },
   { key: 'yy', name: 'YY直播', domain: 'www.yy.com' },
+  { key: 'acfun', name: 'AcFun', domain: 'live.acfun.cn' },
+  { key: 'lang', name: '浪live', domain: 'www.lang.live' },
+  { key: 'missevan', name: '猫耳', domain: 'fm.missevan.com' },
+  { key: 'openrec', name: 'OpenRec', domain: 'www.openrec.tv' },
+  { key: 'weibolive', name: '微博直播', domain: 'weibo.com' },
+  { key: 'xiaohongshu', name: '小红书', domain: 'www.xiaohongshu.com' },
+  { key: 'yizhibo', name: '一直播', domain: 'www.yizhibo.com' },
+  { key: 'hongdoufm', name: '克拉克拉', domain: 'www.hongdoufm.com' },
+  { key: 'zhanqi', name: '战旗', domain: 'www.zhanqi.tv' },
+  { key: 'cc', name: 'CC直播', domain: 'cc.163.com' },
+  { key: 'twitch', name: 'Twitch', domain: 'www.twitch.tv' },
+  { key: 'qq', name: '企鹅电竞', domain: 'egame.qq.com' },
+  { key: 'huajiao', name: '花椒', domain: 'www.huajiao.com' },
 ];
 
 class ConfigInfo extends React.Component<Props, IState> {
@@ -375,7 +389,8 @@ class ConfigInfo extends React.Component<Props, IState> {
                 <li><strong>平台级</strong>：适用于特定平台的所有直播间，覆盖全局设置</li>
                 <li><strong>房间级</strong>：适用于单个直播间，覆盖平台和全局设置</li>
               </ul>
-              <p>平台访问频率限制可以有效防止被直播平台风控。</p>
+              <p>平台访问频率限制可以有效防止被直播平台风控，建议根据平台特性合理设置。</p>
+              <p><strong>支持的平台：</strong>{PLATFORM_OPTIONS.map(p => p.name).join('、')}</p>
             </Card>
           </div>
         ) : (
