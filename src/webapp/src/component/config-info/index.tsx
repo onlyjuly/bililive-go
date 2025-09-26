@@ -5,6 +5,7 @@ import 'prismjs/components/prism-yaml';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/themes/prism.css'; //Example style, you can use another
+import * as yaml from 'js-yaml';
 import API from '../../utils/api';
 import { 
   Button, 
@@ -17,11 +18,14 @@ import {
   Icon,
   Select,
   Tooltip,
-  message
+  message,
+  Switch,
+  Collapse
 } from "antd";
 import './config-info.css';
 
 const { Option } = Select;
+const { Panel } = Collapse;
 const api = new API();
 
 interface Props {
@@ -34,6 +38,8 @@ interface IState {
   editMode: 'gui' | 'text';
   loading: boolean;
   selectedPlatform: string;
+  expandAllPlatforms: boolean;
+  outputTemplatePreview: string;
 }
 
 // 平台配置列表 - 包含所有支持的直播平台
@@ -69,6 +75,8 @@ class ConfigInfo extends React.Component<Props, IState> {
       editMode: 'gui',
       loading: false,
       selectedPlatform: 'bilibili',
+      expandAllPlatforms: false,
+      outputTemplatePreview: '',
     }
   }
 
@@ -81,21 +89,24 @@ class ConfigInfo extends React.Component<Props, IState> {
     api.getConfigInfo()
       .then((rsp: any) => {
         try {
-          // Try to parse YAML config
-          const parsedConfig = this.parseYamlConfig(rsp.config);
+          // 使用js-yaml解析YAML配置
+          const parsedConfig = yaml.load(rsp.config) as any;
           this.setState({
             config: rsp.config,
-            parsedConfig: parsedConfig,
+            parsedConfig: parsedConfig || {},
             loading: false,
           });
+          this.generateOutputTemplatePreview(parsedConfig);
         } catch (e) {
-          // Fallback to text mode if parsing fails
+          // 解析失败时回退到文本模式
+          console.error('YAML解析失败:', e);
           this.setState({
             config: rsp.config,
             parsedConfig: {},
             editMode: 'text',
             loading: false,
           });
+          message.warning('配置文件解析失败，已切换到文本模式');
         }
       })
       .catch(err => {
@@ -104,90 +115,44 @@ class ConfigInfo extends React.Component<Props, IState> {
       });
   }
 
-  parseYamlConfig = (yamlText: string) => {
-    // Simple YAML parser for basic config structure
-    const lines = yamlText.split('\n');
-    const config: any = {
-      interval: 30,
-      out_put_path: './',
-      platform_configs: {},
-      live_rooms: []
-    };
-
-    let currentSection = '';
-    let currentPlatform = '';
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-
-      const currentIndent = line.length - line.trimLeft().length;
-      
-      if (trimmed.includes(':')) {
-        const [key, value] = trimmed.split(':', 2);
-        const cleanKey = key.trim();
-        const cleanValue = value ? value.trim() : '';
-
-        if (currentIndent === 0) {
-          if (cleanKey === 'platform_configs') {
-            currentSection = 'platform_configs';
-          } else if (cleanKey === 'live_rooms') {
-            currentSection = 'live_rooms';
-          } else if (cleanValue) {
-            config[cleanKey] = this.parseValue(cleanValue);
-          }
-        } else if (currentSection === 'platform_configs' && currentIndent === 2) {
-          currentPlatform = cleanKey;
-          if (!config.platform_configs[currentPlatform]) {
-            config.platform_configs[currentPlatform] = {};
-          }
-        } else if (currentSection === 'platform_configs' && currentIndent === 4 && currentPlatform) {
-          config.platform_configs[currentPlatform][cleanKey] = this.parseValue(cleanValue);
-        }
-      }
+  generateOutputTemplatePreview = (config: any) => {
+    const template = config.out_put_tmpl || '';
+    if (!template) {
+      this.setState({ outputTemplatePreview: '使用默认模板：./平台名称/主播名字/[时间戳][主播名字][房间名字].flv' });
+      return;
     }
-
-    return config;
-  }
-
-  parseValue = (value: string) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    if (!isNaN(Number(value))) return Number(value);
-    return value;
+    
+    // 生成示例预览
+    const now = new Date();
+    const timeFormat = now.getFullYear() + '-' + 
+      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(now.getDate()).padStart(2, '0') + ' ' +
+      String(now.getHours()).padStart(2, '0') + '-' +
+      String(now.getMinutes()).padStart(2, '0') + '-' +
+      String(now.getSeconds()).padStart(2, '0');
+    
+    let preview = template
+      .replace(/\{\{\s*\.Live\.GetPlatformCNName\s*\}\}/g, '哔哩哔哩')
+      .replace(/\{\{\s*\.HostName\s*\|\s*filenameFilter\s*\}\}/g, '永雏塔菲')
+      .replace(/\{\{\s*\.RoomName\s*\|\s*filenameFilter\s*\}\}/g, '你见过6点起床种田的塔菲吗？牧场物语4')
+      .replace(/\{\{\s*now\s*\|\s*date\s*"[^"]*"\s*\}\}/g, timeFormat);
+    
+    this.setState({ outputTemplatePreview: `预览：${preview}` });
   }
 
   generateYamlConfig = () => {
     const { parsedConfig } = this.state;
-    let yaml = '';
-
-    // Global settings
-    yaml += `rpc:\n  enable: true\n  bind: :8080\n\n`;
-    yaml += `debug: false\n`;
-    yaml += `interval: ${parsedConfig.interval || 30}\n`;
-    yaml += `out_put_path: ${parsedConfig.out_put_path || './'}\n`;
-    yaml += `ffmpeg_path: ${parsedConfig.ffmpeg_path || ''}\n\n`;
-
-    // Platform configs
-    if (parsedConfig.platform_configs && Object.keys(parsedConfig.platform_configs).length > 0) {
-      yaml += `platform_configs:\n`;
-      Object.keys(parsedConfig.platform_configs).forEach(platform => {
-        const config = parsedConfig.platform_configs[platform];
-        yaml += `  ${platform}:\n`;
-        if (config.name) yaml += `    name: "${config.name}"\n`;
-        if (config.min_access_interval_sec) yaml += `    min_access_interval_sec: ${config.min_access_interval_sec}\n`;
-        if (config.interval) yaml += `    interval: ${config.interval}\n`;
-        if (config.out_put_path) yaml += `    out_put_path: ${config.out_put_path}\n`;
+    try {
+      return yaml.dump(parsedConfig, {
+        indent: 2,
+        lineWidth: 120,
+        noRefs: true,
+        quotingType: '"'
       });
-      yaml += '\n';
+    } catch (e) {
+      console.error('YAML生成失败:', e);
+      return this.state.config;
     }
-
-    // Live rooms (preserve existing rooms)
-    yaml += `live_rooms: []\n`;
-    yaml += `cookies: {}\n`;
-    yaml += `timeout_in_us: 60000000\n`;
-
-    return yaml;
   }
 
   onGuiConfigChange = (field: string, value: any, platform?: string) => {
@@ -202,8 +167,13 @@ class ConfigInfo extends React.Component<Props, IState> {
       newConfig[field] = value;
     }
 
-    // Regenerate YAML
+    // 重新生成YAML
     const newYaml = this.generateYamlConfig();
+    
+    // 如果是输出模板字段，更新预览
+    if (field === 'out_put_tmpl') {
+      this.generateOutputTemplatePreview(newConfig);
+    }
 
     this.setState({
       parsedConfig: newConfig,
@@ -229,14 +199,14 @@ class ConfigInfo extends React.Component<Props, IState> {
   }
 
   renderGlobalSettings = () => {
-    const { parsedConfig } = this.state;
+    const { parsedConfig, outputTemplatePreview } = this.state;
 
     return (
       <Card title="全局设置" style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item label="检测间隔 (秒)">
-              <Tooltip title="全局检测间隔，可被平台和房间级设置覆盖">
+              <Tooltip title="全局检测间隔，设置程序多久检测一次直播状态。较小的值能更快发现开播，但会增加服务器负担。推荐设置：20-60秒">
                 <InputNumber
                   value={parsedConfig.interval || 30}
                   min={1}
@@ -248,7 +218,7 @@ class ConfigInfo extends React.Component<Props, IState> {
           </Col>
           <Col span={12}>
             <Form.Item label="输出路径">
-              <Tooltip title="全局录制文件保存路径，可被平台和房间级设置覆盖">
+              <Tooltip title="全局录制文件保存路径，可被平台和房间级设置覆盖。支持相对路径和绝对路径。示例：./recordings 或 /home/user/videos">
                 <Input
                   value={parsedConfig.out_put_path || './'}
                   onChange={(e) => this.onGuiConfigChange('out_put_path', e.target.value)}
@@ -260,7 +230,7 @@ class ConfigInfo extends React.Component<Props, IState> {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item label="FFmpeg 路径">
-              <Tooltip title="FFmpeg 可执行文件路径，可被平台和房间级设置覆盖">
+              <Tooltip title="FFmpeg 可执行文件路径，用于视频处理。留空会自动在系统PATH中寻找。Windows示例：C:\ffmpeg\bin\ffmpeg.exe">
                 <Input
                   value={parsedConfig.ffmpeg_path || ''}
                   placeholder="留空自动在环境变量中寻找"
@@ -269,30 +239,74 @@ class ConfigInfo extends React.Component<Props, IState> {
               </Tooltip>
             </Form.Item>
           </Col>
+          <Col span={12}>
+            <Form.Item label="超时设置 (微秒)">
+              <Tooltip title="网络请求超时时间，单位微秒。默认60秒。如果网络较慢可以适当增加">
+                <InputNumber
+                  value={parsedConfig.timeout_in_us || 60000000}
+                  min={1000000}
+                  max={300000000}
+                  step={1000000}
+                  onChange={(value) => this.onGuiConfigChange('timeout_in_us', value)}
+                />
+              </Tooltip>
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item label="输出文件名模板">
+              <Tooltip title="自定义输出文件名格式。支持变量：{{.Live.GetPlatformCNName}}平台名、{{.HostName}}主播名、{{.RoomName}}房间名、{{now | date &quot;2006-01-02 15-04-05&quot;}}时间。留空使用默认模板">
+                <Input
+                  value={parsedConfig.out_put_tmpl || ''}
+                  placeholder="留空使用默认模板"
+                  onChange={(e) => this.onGuiConfigChange('out_put_tmpl', e.target.value)}
+                />
+              </Tooltip>
+              {outputTemplatePreview && (
+                <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+                  {outputTemplatePreview}
+                </div>
+              )}
+            </Form.Item>
+          </Col>
         </Row>
       </Card>
     );
   }
 
   renderPlatformSettings = () => {
-    const { parsedConfig, selectedPlatform } = this.state;
+    const { parsedConfig, selectedPlatform, expandAllPlatforms } = this.state;
     const platformConfigs = parsedConfig.platform_configs || {};
+
+    if (expandAllPlatforms) {
+      return this.renderAllPlatformSettings();
+    }
 
     return (
       <Card 
         title="平台特定设置" 
         extra={
-          <Select
-            value={selectedPlatform}
-            style={{ width: 120 }}
-            onChange={(value) => this.setState({ selectedPlatform: value })}
-          >
-            {PLATFORM_OPTIONS.map(platform => (
-              <Option key={platform.key} value={platform.key}>
-                {platform.name}
-              </Option>
-            ))}
-          </Select>
+          <div>
+            <Button 
+              size="small" 
+              onClick={() => this.setState({ expandAllPlatforms: true })}
+              style={{ marginRight: 8 }}
+            >
+              展开所有平台
+            </Button>
+            <Select
+              value={selectedPlatform}
+              style={{ width: 120 }}
+              onChange={(value) => this.setState({ selectedPlatform: value })}
+            >
+              {PLATFORM_OPTIONS.map(platform => (
+                <Option key={platform.key} value={platform.key}>
+                  {platform.name}
+                </Option>
+              ))}
+            </Select>
+          </div>
         }
         style={{ marginBottom: 16 }}
       >
@@ -302,52 +316,110 @@ class ConfigInfo extends React.Component<Props, IState> {
           </Tooltip>
         </div>
         
-        {selectedPlatform && (
-          <div>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="平台访问频率限制 (秒)">
-                  <Tooltip title="对该平台的最小访问间隔，防止触发风控">
-                    <InputNumber
-                      value={platformConfigs[selectedPlatform]?.min_access_interval_sec || 0}
-                      min={0}
-                      max={60}
-                      onChange={(value) => this.onGuiConfigChange('min_access_interval_sec', value, selectedPlatform)}
-                      placeholder="0 = 无限制"
-                    />
-                  </Tooltip>
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="检测间隔 (秒)">
-                  <Tooltip title="覆盖全局检测间隔，仅对该平台生效">
-                    <InputNumber
-                      value={platformConfigs[selectedPlatform]?.interval}
-                      min={1}
-                      max={3600}
-                      placeholder="使用全局设置"
-                      onChange={(value) => this.onGuiConfigChange('interval', value, selectedPlatform)}
-                    />
-                  </Tooltip>
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="输出路径">
-                  <Tooltip title="覆盖全局输出路径，仅对该平台生效">
-                    <Input
-                      value={platformConfigs[selectedPlatform]?.out_put_path || ''}
-                      placeholder="使用全局设置"
-                      onChange={(e) => this.onGuiConfigChange('out_put_path', e.target.value, selectedPlatform)}
-                    />
-                  </Tooltip>
-                </Form.Item>
-              </Col>
-            </Row>
-          </div>
-        )}
+        {selectedPlatform && this.renderSinglePlatformSettings(selectedPlatform, platformConfigs[selectedPlatform] || {})}
       </Card>
+    );
+  }
+
+  renderAllPlatformSettings = () => {
+    const { parsedConfig } = this.state;
+    const platformConfigs = parsedConfig.platform_configs || {};
+
+    return (
+      <Card 
+        title="所有平台设置总览" 
+        extra={
+          <Button 
+            size="small" 
+            onClick={() => this.setState({ expandAllPlatforms: false })}
+          >
+            折叠
+          </Button>
+        }
+        style={{ marginBottom: 16 }}
+      >
+        <Collapse accordion>
+          {PLATFORM_OPTIONS.map(platform => {
+            const config = platformConfigs[platform.key] || {};
+            const hasConfig = Object.keys(config).length > 0;
+            
+            return (
+              <Panel 
+                header={
+                  <div>
+                    <span style={{ fontWeight: hasConfig ? 'bold' : 'normal' }}>
+                      {platform.name}
+                    </span>
+                    {hasConfig && <Icon type="setting" style={{ marginLeft: 8, color: '#1890ff' }} />}
+                  </div>
+                } 
+                key={platform.key}
+              >
+                {this.renderSinglePlatformSettings(platform.key, config)}
+              </Panel>
+            );
+          })}
+        </Collapse>
+      </Card>
+    );
+  }
+
+  renderSinglePlatformSettings = (platformKey: string, platformConfig: any) => {
+    return (
+      <div>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="平台访问频率限制 (秒)">
+              <Tooltip title="对该平台的最小访问间隔，防止触发反机器人机制。建议：抖音5秒、哔哩哔哩3秒、YY直播10秒">
+                <InputNumber
+                  value={platformConfig.min_access_interval_sec || 0}
+                  min={0}
+                  max={60}
+                  onChange={(value) => this.onGuiConfigChange('min_access_interval_sec', value, platformKey)}
+                  placeholder="0 = 无限制"
+                />
+              </Tooltip>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="检测间隔 (秒)">
+              <Tooltip title="覆盖全局检测间隔，仅对该平台生效。可以为高质量平台设置更短的间隔">
+                <InputNumber
+                  value={platformConfig.interval}
+                  min={1}
+                  max={3600}
+                  placeholder="使用全局设置"
+                  onChange={(value) => this.onGuiConfigChange('interval', value, platformKey)}
+                />
+              </Tooltip>
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="输出路径">
+              <Tooltip title="覆盖全局输出路径，仅对该平台生效。可以为不同平台创建专门的文件夹">
+                <Input
+                  value={platformConfig.out_put_path || ''}
+                  placeholder="使用全局设置"
+                  onChange={(e) => this.onGuiConfigChange('out_put_path', e.target.value, platformKey)}
+                />
+              </Tooltip>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="平台名称">
+              <Tooltip title="平台的中文显示名称，用于界面显示和文件路径">
+                <Input
+                  value={platformConfig.name || ''}
+                  placeholder="平台中文名"
+                  onChange={(e) => this.onGuiConfigChange('name', e.target.value, platformKey)}
+                />
+              </Tooltip>
+            </Form.Item>
+          </Col>
+        </Row>
+      </div>
     );
   }
 
