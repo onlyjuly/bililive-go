@@ -118,6 +118,14 @@ class API {
     }
 
     /**
+     * 保存Cookie
+     * @param json {"Host":"","Cookie":""}
+     */
+    saveCookie(json: any) {
+        return utils.requestPut(`${BASE_URL}/cookies`, json);
+    }
+
+    /**
      * 获取直播间详细信息和有效配置
      * @param id 直播间id
      */

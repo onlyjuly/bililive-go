@@ -12,7 +12,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/tidwall/gjson"
@@ -65,6 +67,32 @@ func getLive(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(writer, parseInfo(r.Context(), live))
+}
+
+func getLiveLogs(writer http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	linesStr := r.URL.Query().Get("lines")
+	lines := 100 // 默认100行
+	if linesStr != "" {
+		if parsedLines, err := strconv.Atoi(linesStr); err == nil && parsedLines > 0 {
+			lines = parsedLines
+		}
+	}
+	
+	// 这里暂时返回模拟数据，实际实现需要从日志系统获取
+	logResponse := map[string]interface{}{
+		"lines": []string{
+			fmt.Sprintf("[%s] INFO: 开始监控直播间 %s", time.Now().Format("2006-01-02 15:04:05"), vars["id"]),
+			fmt.Sprintf("[%s] INFO: 检测到直播状态变化", time.Now().Add(-time.Minute).Format("2006-01-02 15:04:05")),
+			fmt.Sprintf("[%s] INFO: 开始录制直播流", time.Now().Add(-2*time.Minute).Format("2006-01-02 15:04:05")),
+			fmt.Sprintf("[%s] INFO: 录制文件保存至 ./recordings/", time.Now().Add(-3*time.Minute).Format("2006-01-02 15:04:05")),
+			fmt.Sprintf("[%s] INFO: 应用层级配置: 检测间隔=30秒", time.Now().Add(-4*time.Minute).Format("2006-01-02 15:04:05")),
+		},
+		"total": 5,
+		"max_lines": lines,
+	}
+	
+	writeJSON(writer, logResponse)
 }
 
 func parseLiveAction(writer http.ResponseWriter, r *http.Request) {
