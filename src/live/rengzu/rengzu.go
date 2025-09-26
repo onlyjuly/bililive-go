@@ -1,3 +1,9 @@
+// Package rengzu provides live streaming support for 时光直播 (Rengzu.com).
+// This package implements the Live interface to handle room information
+// extraction and stream URL discovery for the Rengzu.com live streaming platform.
+//
+// Supported URL format: https://www.rengzu.com/{room_id}
+// Example: https://www.rengzu.com/191996
 package rengzu
 
 import (
@@ -98,7 +104,7 @@ func (l *Live) GetInfo() (info *live.Info, err error) {
 		if matches := re.FindStringSubmatch(body); len(matches) > 1 {
 			jsonStr := matches[1]
 			result := gjson.Parse(jsonStr)
-			
+
 			// Try to extract common fields
 			if result.IsObject() {
 				// Common field names in live streaming platforms
@@ -134,7 +140,7 @@ func (l *Live) GetInfo() (info *live.Info, err error) {
 						break
 					}
 				}
-				
+
 				if hostName != "" || roomName != "" {
 					break
 				}
@@ -272,7 +278,7 @@ func (l *Live) GetStreamUrls() (us []*url.URL, err error) {
 			continue
 		}
 		seen[streamUrl] = true
-		
+
 		// Basic URL validation
 		if strings.HasPrefix(streamUrl, "http") || strings.HasPrefix(streamUrl, "rtmp") {
 			validUrls = append(validUrls, streamUrl)
