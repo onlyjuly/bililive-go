@@ -83,8 +83,10 @@ type recorder struct {
 	parser     parser.Parser
 	parserLock *sync.RWMutex
 
-	stop  chan struct{}
-	state uint32
+	stop               chan struct{}
+	state              uint32
+	consecutiveFailures uint32
+	lastFailureLog     time.Time
 }
 
 func NewRecorder(ctx context.Context, live live.Live) (Recorder, error) {
@@ -117,10 +119,34 @@ func (r *recorder) tryRecord(ctx context.Context) {
 		}
 	}
 	if err != nil || len(streamInfos) == 0 {
-		r.getLogger().WithError(err).Warn("failed to get stream url, will retry after 5s...")
-		time.Sleep(5 * time.Second)
+		// Implement exponential backoff for logging to reduce spam
+		now := time.Now()
+		failures := atomic.AddUint32(&r.consecutiveFailures, 1)
+		
+		// Calculate backoff delay: min(5s * 2^failures, 5min)
+		backoffDelay := time.Duration(5) * time.Second
+		for i := uint32(1); i < failures && backoffDelay < 5*time.Minute; i++ {
+			backoffDelay *= 2
+		}
+		if backoffDelay > 5*time.Minute {
+			backoffDelay = 5 * time.Minute
+		}
+		
+		// Only log if enough time has passed since last log or if this is the first failure
+		if failures == 1 || now.Sub(r.lastFailureLog) >= time.Duration(failures)*time.Minute {
+			r.getLogger().WithError(err).WithFields(logrus.Fields{
+				"consecutive_failures": failures,
+				"backoff_delay": backoffDelay,
+			}).Warn("failed to get stream url, will retry with backoff...")
+			r.lastFailureLog = now
+		}
+		
+		time.Sleep(backoffDelay)
 		return
 	}
+
+	// Reset failure counter on successful stream URL retrieval
+	atomic.StoreUint32(&r.consecutiveFailures, 0)
 
 	obj, _ := r.cache.Get(r.Live)
 	info := obj.(*live.Info)

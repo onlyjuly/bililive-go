@@ -104,6 +104,12 @@ func getStreamUrlsFromGameStreamInfoJson(gameStreamInfoJson gjson.Result) (us []
 	sFlvAntiCode := gameStreamInfoJson.Get("sFlvAntiCode").String()
 	// get sFlvUrl
 	sFlvUrl := gameStreamInfoJson.Get("sFlvUrl").String()
+	
+	// Validate required fields to prevent malformed URLs
+	if sFlvUrl == "" || sStreamName == "" {
+		return nil, fmt.Errorf("invalid stream info: sFlvUrl=%q, sStreamName=%q", sFlvUrl, sStreamName)
+	}
+	
 	// get random uid
 	uid := rand.Int63n(99999999999) + 1200000000000
 

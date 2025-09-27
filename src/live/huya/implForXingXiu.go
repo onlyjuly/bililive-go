@@ -75,6 +75,12 @@ func GetStreamInfos_ForXingXiu(l *Live) (infos []*live.StreamUrlInfo, err error)
 	sStreamName := streamInfoObj.Get("sStreamName").String()
 	sFlvUrlSuffix := streamInfoObj.Get("sFlvUrlSuffix").String()
 	sFlvAntiCode := streamInfoObj.Get("sFlvAntiCode").String()
+	
+	// Validate required fields to prevent malformed URLs
+	if sFlvUrl == "" || sStreamName == "" {
+		return nil, fmt.Errorf("invalid stream info: sFlvUrl=%q, sStreamName=%q", sFlvUrl, sStreamName)
+	}
+	
 	streamUrl := fmt.Sprintf("%s/%s.%s?%s", sFlvUrl, sStreamName, sFlvUrlSuffix, sFlvAntiCode)
 
 	// 如果选择的是 TX，执行额外的字符串替换
