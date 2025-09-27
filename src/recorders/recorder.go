@@ -123,17 +123,28 @@ func (r *recorder) tryRecord(ctx context.Context) {
 		now := time.Now()
 		failures := atomic.AddUint32(&r.consecutiveFailures, 1)
 		
-		// Calculate backoff delay: min(5s * 2^failures, 5min)
+		// Calculate backoff delay: 5s, 10s, 20s, 40s, 80s, 160s (2.5min), then cap at 5min
 		backoffDelay := time.Duration(5) * time.Second
-		for i := uint32(1); i < failures && backoffDelay < 5*time.Minute; i++ {
+		maxDelay := 5 * time.Minute
+		
+		for i := uint32(1); i < failures && backoffDelay < maxDelay; i++ {
 			backoffDelay *= 2
 		}
-		if backoffDelay > 5*time.Minute {
-			backoffDelay = 5 * time.Minute
+		if backoffDelay > maxDelay {
+			backoffDelay = maxDelay
 		}
 		
-		// Only log if enough time has passed since last log or if this is the first failure
-		if failures == 1 || now.Sub(r.lastFailureLog) >= time.Duration(failures)*time.Minute {
+		// Log rate limiting: Log immediately on first failure, then log less frequently as failures increase
+		shouldLog := false
+		if failures == 1 {
+			shouldLog = true  // Always log first failure
+		} else if failures <= 3 {
+			shouldLog = now.Sub(r.lastFailureLog) >= 30*time.Second  // Log every 30s for first few failures
+		} else {
+			shouldLog = now.Sub(r.lastFailureLog) >= time.Duration(failures)*time.Minute  // Log less frequently for persistent failures
+		}
+		
+		if shouldLog {
 			r.getLogger().WithError(err).WithFields(logrus.Fields{
 				"consecutive_failures": failures,
 				"backoff_delay": backoffDelay,

@@ -118,6 +118,12 @@ func getStreamUrlsFromGameStreamInfoJson(gameStreamInfoJson gjson.Result) (us []
 		return nil, err
 	}
 	tmpUrlString := fmt.Sprintf("%s/%s.flv?%s", sFlvUrl, sStreamName, query)
+	
+	// Additional validation to ensure the final URL is well-formed
+	if strings.HasPrefix(tmpUrlString, "/") || strings.HasPrefix(tmpUrlString, ".flv") || !strings.HasPrefix(tmpUrlString, "http") {
+		return nil, fmt.Errorf("malformed URL generated: %q - invalid sFlvUrl: %q", tmpUrlString, sFlvUrl)
+	}
+	
 	u, err := url.Parse(tmpUrlString)
 	if err != nil {
 		return nil, err

@@ -83,6 +83,11 @@ func GetStreamInfos_ForXingXiu(l *Live) (infos []*live.StreamUrlInfo, err error)
 	
 	streamUrl := fmt.Sprintf("%s/%s.%s?%s", sFlvUrl, sStreamName, sFlvUrlSuffix, sFlvAntiCode)
 
+	// Additional validation to ensure the final URL is well-formed  
+	if strings.HasPrefix(streamUrl, "/") || strings.HasPrefix(streamUrl, ".flv") || !strings.HasPrefix(streamUrl, "http") {
+		return nil, fmt.Errorf("malformed URL generated: %q - invalid sFlvUrl: %q", streamUrl, sFlvUrl)
+	}
+
 	// 如果选择的是 TX，执行额外的字符串替换
 	if streamInfoObj.Get("sCdnType").String() == "TX" {
 		streamUrl = strings.Replace(streamUrl, "&ctype=tars_mp", "&ctype=huya_webh5", 1)
