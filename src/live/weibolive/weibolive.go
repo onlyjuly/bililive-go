@@ -20,8 +20,6 @@ const (
 	cnName = "微博直播"
 
 	liveurl = "https://weibo.com/l/!/2/wblive/room/show_pc_live.json?live_id="
-	userapi = "https://weibo.com/ajax/profile/info?uid="
-	liveapi = "https://weibo.com/ajax/statuses/liveCenter?uid="
 )
 
 func init() {
@@ -86,12 +84,13 @@ func (l *Live) getLiveRoomFromUser() error {
 		return live.ErrRoomUrlIncorrect
 	}
 	
-	// First try to get live status from the live center API
-	resp, err := l.RequestSession.Get(liveapi+l.userID, 
+	// Get the user's profile page to look for live room information
+	profileUrl := fmt.Sprintf("https://weibo.com/%s", l.userID)
+	resp, err := l.RequestSession.Get(profileUrl, 
 		live.CommonUserAgent,
 		requests.Headers(map[string]any{
-			"Referer": "https://weibo.com/" + l.userID,
-			"Accept": "application/json, text/plain, */*",
+			"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+			"Accept-Language": "zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",
 		}))
 	if err != nil {
 		return err
@@ -101,24 +100,28 @@ func (l *Live) getLiveRoomFromUser() error {
 		return live.ErrRoomNotExist
 	}
 	
-	body, err := resp.Bytes()
+	body, err := resp.Text()
 	if err != nil {
 		return err
 	}
 	
-	// Check if user is currently live
-	liveData := gjson.GetBytes(body, "data.live_data")
-	if !liveData.Exists() {
-		return live.ErrRoomNotExist
+	// Look for live room links in the profile page
+	// Pattern for live room URLs in the HTML content
+	liveRoomRegex := regexp.MustCompile(`https://weibo\.com/l/wblive/p/show/([^"'\s]+)`)
+	matches := liveRoomRegex.FindStringSubmatch(body)
+	
+	if len(matches) < 2 {
+		// Also try alternative patterns
+		// Sometimes the live room ID appears in different formats
+		liveIdRegex := regexp.MustCompile(`"live_id":"([^"]+)"`)
+		matches = liveIdRegex.FindStringSubmatch(body)
+		
+		if len(matches) < 2 {
+			return live.ErrRoomNotExist
+		}
 	}
 	
-	// Extract the live room ID from the response
-	liveID := gjson.GetBytes(body, "data.live_data.live_id").String()
-	if liveID == "" {
-		return live.ErrRoomNotExist
-	}
-	
-	l.roomID = liveID
+	l.roomID = matches[1]
 	return nil
 }
 
