@@ -62,6 +62,9 @@ func getConfigBesidesExecutable() (*configs.Config, error) {
 }
 
 func main() {
+	// Initialize DNS resolver early to fix "no such host" issues on Windows
+	utils.InitDNSResolver()
+	
 	config, err := getConfig()
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
