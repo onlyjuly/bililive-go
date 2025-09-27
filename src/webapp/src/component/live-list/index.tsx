@@ -1,5 +1,5 @@
 import React from "react";
-import {Button, Divider, PageHeader, Table, Tag, Tabs, Row, Col, Tooltip, Card, Collapse, Badge, message, List, Typography} from 'antd';
+import { Button, Divider, PageHeader, Table, Tag, Tabs, Row, Col, Tooltip, Card, Badge, message, List, Typography } from 'antd';
 import PopDialog from '../pop-dialog/index';
 import AddRoomDialog from '../add-room-dialog/index';
 import API from '../../utils/api';
@@ -10,7 +10,6 @@ import EditCookieDialog from "../edit-cookie/index";
 
 const api = new API();
 const { TabPane } = Tabs;
-const { Panel } = Collapse;
 const { Text } = Typography;
 
 const REFRESH_TIME = 3 * 60 * 1000;
@@ -39,9 +38,9 @@ interface ItemData {
     roomId: string
 }
 interface CookieItemData {
-    Platform_cn_name:string,
-    Host:string,
-    Cookie:string
+    Platform_cn_name: string,
+    Host: string,
+    Cookie: string
 }
 
 interface Room {
@@ -198,18 +197,18 @@ class LiveList extends React.Component<Props, IState> {
         this.runStatus,
         this.runAction
     ];
-    cookieColumns=[
+    cookieColumns = [
         {
-            title:'直播平台',
-            dataIndex:'livename',
-            key:'livename',
-            render:(name: String, data: CookieItemData) => data.Platform_cn_name+'('+data.Host+')'
-        },{
+            title: '直播平台',
+            dataIndex: 'livename',
+            key: 'livename',
+            render: (name: String, data: CookieItemData) => data.Platform_cn_name + '(' + data.Host + ')'
+        }, {
             title: 'Cookie',
             dataIndex: 'Cookie',
             key: 'Cookie',
-            ellipsis:true,
-            render:(name: String, data: CookieItemData) => {
+            ellipsis: true,
+            render: (name: String, data: CookieItemData) => {
                 // return <div>
                 //     <label className="cookieString">{data.Cookie}</label>
                 //     <Button type="primary" shape="circle" icon="edit" onClick={()=>{
@@ -224,9 +223,9 @@ class LiveList extends React.Component<Props, IState> {
                     </Col>
                     <Col className="gutter-row" span={4}>
                         <div className="gutter-box">
-                            <Button type="primary" shape="circle" icon="edit" onClick={()=>{
+                            <Button type="primary" shape="circle" icon="edit" onClick={() => {
                                 this.onEditCookitClick(data)
-                            }}/>
+                            }} />
                         </div>
                     </Col>
                 </Row>
@@ -238,7 +237,7 @@ class LiveList extends React.Component<Props, IState> {
         super(props);
         this.state = {
             list: [],
-            cookieList:[],
+            cookieList: [],
             addRoomDialogVisible: false,
             window: window,
             expandedRowKeys: [],
@@ -275,7 +274,7 @@ class LiveList extends React.Component<Props, IState> {
         this.child.showModal()
     }
 
-    onEditCookitClick = (data:any)=>{
+    onEditCookitClick = (data: any) => {
         this.cookieChild.showModal(data)
     }
 
@@ -356,19 +355,19 @@ class LiveList extends React.Component<Props, IState> {
             });
     }
 
-    requestCookieData(){
+    requestCookieData() {
         api.getCookieList()
-            .then(function (rsp:any){
+            .then(function (rsp: any) {
                 return rsp
             }).then((data: CookieItemData[]) => {
-            this.setState({
-                cookieList: data
-            });
-        })
+                this.setState({
+                    cookieList: data
+                });
+            })
     }
 
-    requestData= (targetKey:string) => {
-        switch (targetKey){
+    requestData = (targetKey: string) => {
+        switch (targetKey) {
             case "livelist":
                 this.requestListData()
                 break
@@ -381,7 +380,7 @@ class LiveList extends React.Component<Props, IState> {
     toggleExpandRow = (roomId: string) => {
         const { expandedRowKeys } = this.state;
         const isExpanded = expandedRowKeys.includes(roomId);
-        
+
         if (isExpanded) {
             // 收起
             this.setState({
@@ -560,9 +559,9 @@ class LiveList extends React.Component<Props, IState> {
                                 ghost={false}
                                 title="Cookie管理"
                                 subTitle="Cookie List"
-                            extra={[
-                                <EditCookieDialog key="1" ref={this.onCookieRef} refresh={this.refreshCookie}/>
-                            ]}>
+                                extra={[
+                                    <EditCookieDialog key="1" ref={this.onCookieRef} refresh={this.refreshCookie} />
+                                ]}>
                             </PageHeader>
                         </div>
                         <Table

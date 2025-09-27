@@ -7,19 +7,18 @@ import 'prismjs/components/prism-javascript';
 import 'prismjs/themes/prism.css'; //Example style, you can use another
 import * as yaml from 'js-yaml';
 import API from '../../utils/api';
-import { 
-  Button, 
-  Card, 
-  Form, 
-  Input, 
-  InputNumber, 
-  Row, 
-  Col, 
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Col,
   Icon,
   Select,
   Tooltip,
   message,
-  Switch,
   Collapse
 } from "antd";
 import './config-info.css';
@@ -121,22 +120,22 @@ class ConfigInfo extends React.Component<Props, IState> {
       this.setState({ outputTemplatePreview: '使用默认模板：./平台名称/主播名字/[时间戳][主播名字][房间名字].flv' });
       return;
     }
-    
+
     // 生成示例预览
     const now = new Date();
-    const timeFormat = now.getFullYear() + '-' + 
-      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+    const timeFormat = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
       String(now.getDate()).padStart(2, '0') + ' ' +
       String(now.getHours()).padStart(2, '0') + '-' +
       String(now.getMinutes()).padStart(2, '0') + '-' +
       String(now.getSeconds()).padStart(2, '0');
-    
+
     let preview = template
       .replace(/\{\{\s*\.Live\.GetPlatformCNName\s*\}\}/g, '哔哩哔哩')
       .replace(/\{\{\s*\.HostName\s*\|\s*filenameFilter\s*\}\}/g, '永雏塔菲')
       .replace(/\{\{\s*\.RoomName\s*\|\s*filenameFilter\s*\}\}/g, '你见过6点起床种田的塔菲吗？牧场物语4')
       .replace(/\{\{\s*now\s*\|\s*date\s*"[^"]*"\s*\}\}/g, timeFormat);
-    
+
     this.setState({ outputTemplatePreview: `预览：${preview}` });
   }
 
@@ -169,7 +168,7 @@ class ConfigInfo extends React.Component<Props, IState> {
 
     // 重新生成YAML
     const newYaml = this.generateYamlConfig();
-    
+
     // 如果是输出模板字段，更新预览
     if (field === 'out_put_tmpl') {
       this.generateOutputTemplatePreview(newConfig);
@@ -284,12 +283,12 @@ class ConfigInfo extends React.Component<Props, IState> {
     }
 
     return (
-      <Card 
-        title="平台特定设置" 
+      <Card
+        title="平台特定设置"
         extra={
           <div>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={() => this.setState({ expandAllPlatforms: true })}
               style={{ marginRight: 8 }}
             >
@@ -315,7 +314,7 @@ class ConfigInfo extends React.Component<Props, IState> {
             <Icon type="info-circle" /> 设置优先级：房间级 &gt; 平台级 &gt; 全局级
           </Tooltip>
         </div>
-        
+
         {selectedPlatform && this.renderSinglePlatformSettings(selectedPlatform, platformConfigs[selectedPlatform] || {})}
       </Card>
     );
@@ -326,11 +325,11 @@ class ConfigInfo extends React.Component<Props, IState> {
     const platformConfigs = parsedConfig.platform_configs || {};
 
     return (
-      <Card 
-        title="所有平台设置总览" 
+      <Card
+        title="所有平台设置总览"
         extra={
-          <Button 
-            size="small" 
+          <Button
+            size="small"
             onClick={() => this.setState({ expandAllPlatforms: false })}
           >
             折叠
@@ -342,9 +341,9 @@ class ConfigInfo extends React.Component<Props, IState> {
           {PLATFORM_OPTIONS.map(platform => {
             const config = platformConfigs[platform.key] || {};
             const hasConfig = Object.keys(config).length > 0;
-            
+
             return (
-              <Panel 
+              <Panel
                 header={
                   <div>
                     <span style={{ fontWeight: hasConfig ? 'bold' : 'normal' }}>
@@ -352,7 +351,7 @@ class ConfigInfo extends React.Component<Props, IState> {
                     </span>
                     {hasConfig && <Icon type="setting" style={{ marginLeft: 8, color: '#1890ff' }} />}
                   </div>
-                } 
+                }
                 key={platform.key}
               >
                 {this.renderSinglePlatformSettings(platform.key, config)}
@@ -434,13 +433,13 @@ class ConfigInfo extends React.Component<Props, IState> {
       <div>
         <div style={{ marginBottom: 16, textAlign: 'right' }}>
           <Button.Group>
-            <Button 
+            <Button
               type={editMode === 'gui' ? 'primary' : 'default'}
               onClick={() => this.setState({ editMode: 'gui' })}
             >
               <Icon type="form" /> GUI 模式
             </Button>
-            <Button 
+            <Button
               type={editMode === 'text' ? 'primary' : 'default'}
               onClick={() => this.setState({ editMode: 'text' })}
             >
@@ -453,7 +452,7 @@ class ConfigInfo extends React.Component<Props, IState> {
           <div>
             {this.renderGlobalSettings()}
             {this.renderPlatformSettings()}
-            
+
             <Card title="配置层次结构说明">
               <p><Icon type="info-circle" style={{ color: '#1890ff' }} /> 本程序支持三级配置覆盖：</p>
               <ul>
@@ -481,7 +480,7 @@ class ConfigInfo extends React.Component<Props, IState> {
             }}
           />
         )}
-        
+
         <div style={{ marginTop: 16, textAlign: 'center' }}>
           <Button
             type="primary"
