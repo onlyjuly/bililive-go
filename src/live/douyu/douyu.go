@@ -188,6 +188,9 @@ func (l *Live) fetchRoomID() error {
 }
 
 func (l *Live) GetInfo() (info *live.Info, err error) {
+	// 在进行网络请求前等待平台访问频率限制
+	l.WaitForPlatformRateLimit()
+	
 	if err := l.fetchRoomID(); err != nil {
 		if err.Error() == "房间未开放" {
 			return nil, errors.New("room not exists, fetchRoomID failed")
