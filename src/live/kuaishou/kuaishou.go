@@ -71,9 +71,6 @@ func (l *Live) getData() (*gjson.Result, error) {
 }
 
 func (l *Live) GetInfo() (info *live.Info, err error) {
-	// 在进行网络请求前等待平台访问频率限制
-	l.WaitForPlatformRateLimit()
-	
 	data, err := l.getData()
 	if err != nil {
 		return nil, err

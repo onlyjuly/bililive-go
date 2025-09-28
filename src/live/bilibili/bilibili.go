@@ -46,9 +46,6 @@ type Live struct {
 }
 
 func (l *Live) parseRealId() error {
-	// 在进行网络请求前等待平台访问频率限制
-	l.WaitForPlatformRateLimit()
-	
 	paths := strings.Split(l.Url.Path, "/")
 	if len(paths) < 2 {
 		return live.ErrRoomUrlIncorrect
@@ -74,9 +71,6 @@ func (l *Live) parseRealId() error {
 }
 
 func (l *Live) GetInfo() (info *live.Info, err error) {
-	// 在进行网络请求前等待平台访问频率限制
-	l.WaitForPlatformRateLimit()
-	
 	// Parse the short id from URL to full id
 	if l.realID == "" {
 		if err := l.parseRealId(); err != nil {
@@ -136,9 +130,6 @@ func (l *Live) GetInfo() (info *live.Info, err error) {
 }
 
 func (l *Live) GetStreamInfos() (infos []*live.StreamUrlInfo, err error) {
-	// 在进行网络请求前等待平台访问频率限制
-	l.WaitForPlatformRateLimit()
-	
 	if l.realID == "" {
 		if err := l.parseRealId(); err != nil {
 			return nil, err

@@ -151,9 +151,6 @@ func (l *Live) getRoomInfo() ([]byte, bool, error) {
 }
 
 func (l *Live) GetInfo() (info *live.Info, err error) {
-	// 在进行网络请求前等待平台访问频率限制
-	l.WaitForPlatformRateLimit()
-	
 	body, islive, err := l.getRoomInfo()
 	if err != nil {
 		return nil, live.ErrRoomNotExist

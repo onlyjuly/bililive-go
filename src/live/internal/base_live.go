@@ -9,7 +9,6 @@ import (
 	"github.com/bililive-go/bililive-go/src/configs"
 	"github.com/bililive-go/bililive-go/src/instance"
 	"github.com/bililive-go/bililive-go/src/live"
-	"github.com/bililive-go/bililive-go/src/pkg/ratelimit"
 	"github.com/bililive-go/bililive-go/src/pkg/utils"
 	"github.com/bililive-go/bililive-go/src/types"
 	"github.com/hr3lxphr6j/requests"
@@ -94,12 +93,4 @@ func (a *BaseLive) GetStreamUrls() ([]*url.URL, error) {
 // TODO: remove this method
 func (a *BaseLive) GetStreamInfos() ([]*live.StreamUrlInfo, error) {
 	return nil, live.ErrNotImplemented
-}
-
-// WaitForPlatformRateLimit 等待平台访问频率限制允许
-func (a *BaseLive) WaitForPlatformRateLimit() {
-	platformKey := configs.GetPlatformKeyFromUrl(a.GetRawUrl())
-	if platformKey != "" {
-		ratelimit.GetGlobalRateLimiter().WaitForPlatform(platformKey)
-	}
 }
