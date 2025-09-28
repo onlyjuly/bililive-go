@@ -413,6 +413,9 @@ func (l *Live) createStreamUrlInfos(streamUrlInfo, originUrlList map[string]inte
 }
 
 func (l *Live) GetInfo() (info *live.Info, err error) {
+	// 在进行网络请求前等待平台访问频率限制
+	l.WaitForPlatformRateLimit()
+	
 	l.isReTrying = false
 	var streamUrlInfo, originUrlList map[string]interface{}
 	if l.Url.Host == domainForApp { // APP

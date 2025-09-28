@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bililive-go/bililive-go/src/pkg/ratelimit"
 	"github.com/bililive-go/bililive-go/src/types"
 	"gopkg.in/yaml.v2"
 )
@@ -133,6 +134,8 @@ var config *Config
 
 func SetCurrentConfig(cfg *Config) {
 	config = cfg
+	// 配置更新时同步平台访问频率限制器
+	cfg.syncPlatformRateLimits()
 }
 
 func GetCurrentConfig() *Config {
@@ -315,6 +318,8 @@ func NewConfigWithBytes(b []byte) (*Config, error) {
 	}
 
 	config.RefreshLiveRoomIndexCache()
+	// 在配置加载时同步平台访问频率限制器
+	config.syncPlatformRateLimits()
 	return &config, nil
 }
 
@@ -381,6 +386,28 @@ func (c *Config) GetPlatformMinAccessInterval(platformName string) int {
 		return platformConfig.MinAccessIntervalSec
 	}
 	return 0 // 未指定时无限制
+}
+
+// syncPlatformRateLimits 同步平台访问频率限制到全局限制器
+func (c *Config) syncPlatformRateLimits() {
+	rateLimiter := ratelimit.GetGlobalRateLimiter()
+	
+	// 清除已有限制
+	currentLimits := rateLimiter.GetAllPlatformLimits()
+	
+	// 设置新的平台限制
+	for platformKey, platformConfig := range c.PlatformConfigs {
+		if platformConfig.MinAccessIntervalSec > 0 {
+			rateLimiter.SetPlatformLimit(platformKey, platformConfig.MinAccessIntervalSec)
+		}
+		// 从当前限制列表中移除此平台（标记为已处理）
+		delete(currentLimits, platformKey)
+	}
+	
+	// 清除配置中不再存在的平台限制
+	for platformKey := range currentLimits {
+		rateLimiter.RemovePlatformLimit(platformKey)
+	}
 }
 
 // ResolvedConfig 包含房间的最终解析配置值
