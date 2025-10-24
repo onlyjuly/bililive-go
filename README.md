@@ -177,11 +177,11 @@ https://github.com/bililive-go/bililive-go/wiki/Install-Linux
 
 ### docker
 
-使用 https://hub.docker.com/r/chigusa/bililive-go 镜像创建容器运行。
+使用 GitHub Packages 中的镜像创建容器运行。
 
 例如：
 ```
-docker run --restart=always -v ~/config.yml:/etc/bililive-go/config.yml -v ~/Videos:/srv/bililive -p 8080:8080 -d chigusa/bililive-go
+docker run --restart=always -v ~/config.yml:/etc/bililive-go/config.yml -v ~/Videos:/srv/bililive -p 8080:8080 -d ghcr.io/onlyjuly/bililive-go:latest
 ```
 
 ### docker compose

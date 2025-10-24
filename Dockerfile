@@ -61,11 +61,9 @@ RUN set -x; \
     *) echo "Unsupported arch: $(arch)"; exit 1 ;; \
     esac; \
     echo "Downloading release ${tag} for arch ${go_arch}"; \
-    cd /tmp && curl -sSLO "https://github.com/bililive-go/bililive-go/releases/download/${tag}/bililive-linux-${go_arch}.tar.gz" && \
-    tar zxvf "bililive-linux-${go_arch}.tar.gz" "bililive-linux-${go_arch}" && \
+    cd /tmp && curl -sSLO "https://github.com/onlyjuly/bililive-go/releases/download/${tag}/bililive-linux-${go_arch}" && \
     chmod +x "bililive-linux-${go_arch}" && \
     mv "./bililive-linux-${go_arch}" /usr/bin/bililive-go && \
-    rm "./bililive-linux-${go_arch}.tar.gz"; \
     if [ "${tag}" != "$(/usr/bin/bililive-go --version 2>&1 | tr -d '\n')" ]; then exit 1; fi
 
 COPY config.docker.yml $CONF_DIR/config.yml

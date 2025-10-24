@@ -1,29 +1,11 @@
 package ntfy
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 )
-
-// NtfyMessage represents an ntfy message
-type NtfyMessage struct {
-	Title   string   `json:"title"`
-	Message string   `json:"message"`
-	Tags    []string `json:"tags"`
-	Click   string   `json:"click"`
-	Actions []Action `json:"actions"`
-}
-
-// Action represents an action button in ntfy notification
-type Action struct {
-	Action string `json:"action"`
-	Label  string `json:"label"`
-	URL    string `json:"url"`
-}
 
 // SendMessage 发送ntfy消息
 func SendMessage(url, token, tag, hostname, platform, liveURL, schemeURL string) error {
@@ -31,33 +13,32 @@ func SendMessage(url, token, tag, hostname, platform, liveURL, schemeURL string)
 	message := fmt.Sprintf("%s开播", platform)
 	title := hostname
 
-	// 创建ntfy消息对象
-	ntfyMsg := NtfyMessage{
-		Title:   title,
-		Message: message,
-		Tags:    []string{tag},
-		Click:   schemeURL,
-		Actions: []Action{
-			{
-				Action: "view",
-				Label:  "打开直播间",
-				URL:    liveURL,
-			},
-		},
-	}
-
-	// 将消息序列化为JSON
-	body, err := json.Marshal(ntfyMsg)
-	if err != nil {
-		return fmt.Errorf("failed to encode message: %w", err)
-	}
-
 	// 创建HTTP请求
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", url, strings.NewReader(message))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+
+	// 设置必要的请求头
+	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Set("Title", title)
+	req.Header.Set("Tags", tag)
+
+	// 如果提供了scheme URL，则设置Click头
+	if schemeURL != "" {
+		req.Header.Set("Click", schemeURL)
+	}
+
+	// 设置Actions头，用于打开直播间
+	if liveURL != "" {
+		// 确保liveURL有https://前缀
+		fullURL := liveURL
+		if !strings.HasPrefix(liveURL, "http://") && !strings.HasPrefix(liveURL, "https://") {
+			fullURL = "https://" + liveURL
+		}
+		action := fmt.Sprintf(`[{"action":"view","label":"打开直播间","url":"%s"}]`, fullURL)
+		req.Header.Set("Actions", action)
+	}
 
 	// 如果提供了token，则添加Authorization头
 	if token != "" {

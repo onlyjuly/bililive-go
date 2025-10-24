@@ -3,7 +3,8 @@
 set -o errexit
 set -o nounset
 
-IMAGE_NAME=chigusa/bililive-go
+# 使用GitHub Packages镜像名称
+IMAGE_NAME=ghcr.io/onlyjuly/bililive-go
 VERSION=$(git describe --tags --always)
 
 IMAGE_TAG=$IMAGE_NAME:$VERSION
