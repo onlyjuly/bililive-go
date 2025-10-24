@@ -11,6 +11,11 @@ live_rooms:
 
 # 通知服务配置
 notify:
+  ntfy:
+    enable: false
+    URL: https://ntfy.sh/xxxx
+    token: tk_xxxxxxxxx
+    tag: notes
   telegram:
     # 是否开启Telegram通知
     enable: false

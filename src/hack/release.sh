@@ -5,31 +5,6 @@ set -o nounset
 
 readonly BIN_PATH=bin
 
-package() {
-  last_dir=$(pwd)
-  cd $BIN_PATH
-  file=$1
-  type=$2
-  case $type in
-  zip)
-    res=${file%.exe}.zip
-    zip $res ${file} -j ../config.yml >/dev/null 2>&1
-    ;;
-  tar)
-    res=${file}.tar.gz
-    tar zcvf $res ${file} -C ../ config.yml >/dev/null 2>&1
-    ;;
-  7z)
-    res=${file}.7z
-    7z a $res ${file} ../config.yml >/dev/null 2>&1
-    ;;
-  *) ;;
-
-  esac
-  cd "$last_dir"
-  echo $BIN_PATH/$res
-}
-
 # 串行构建，支持在 CI 通过“分片”并行（多个 Runner/Job 共同完成）
 # 可选环境变量：
 #   SHARD_TOTAL 分片总数（默认 1）
@@ -64,18 +39,5 @@ printf "%s\n" "$TARGETS" | while IFS= read -r dist; do
   make PLATFORM="$platform" ARCH="$arch" bililive
 done
 
-for file in $(ls $BIN_PATH); do
-  case $file in
-  *.tar.gz | *.zip | *.7z | *.yml | *.yaml)
-    continue
-    ;;
-  *windows*)
-    package_type=zip
-    ;;
-  *)
-    package_type=tar
-    ;;
-  esac
-  res=$(package $file $package_type)
-  rm -f $BIN_PATH/$file
-done
+# 移除了打包循环，因为我们不再需要打包二进制文件
+# 直接保留未打包的二进制文件在bin目录中

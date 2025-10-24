@@ -66,6 +66,7 @@ type Log struct {
 type Notify struct {
 	Telegram Telegram `yaml:"telegram"`
 	Email    Email    `yaml:"email"`
+	Ntfy     Ntfy     `yaml:"ntfy"`
 }
 
 type Telegram struct {
@@ -82,6 +83,13 @@ type Email struct {
 	SenderEmail    string `yaml:"senderEmail"`
 	SenderPassword string `yaml:"senderPassword"`
 	RecipientEmail string `yaml:"recipientEmail"`
+}
+
+type Ntfy struct {
+	Enable bool   `yaml:"enable"`
+	URL    string `yaml:"URL"`
+	Token  string `yaml:"token"`
+	Tag    string `yaml:"tag"`
 }
 
 // Config content all config info.
@@ -198,6 +206,12 @@ var defaultConfig = Config{
 			SenderEmail:    "",
 			SenderPassword: "",
 			RecipientEmail: "",
+		},
+		Ntfy: Ntfy{
+			Enable: false,
+			URL:    "https://ntfy.sh/",
+			Token:  "",
+			Tag:    "notes",
 		},
 	},
 	AppDataPath: "./.appdata/",

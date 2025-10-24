@@ -54,14 +54,12 @@ jobs:
         run: make build-web
       - name: Build go binaries (shard ${{ matrix.shard_index }}/10)
         run: make release
-      - name: Upload packaged artifacts only
+      - name: Upload unpackaged binaries only
         uses: actions/upload-artifact@v4
         with:
           name: bililive-bins-shard-${{ matrix.shard_index }}
           path: |
-            bin/*.tar.gz
-            bin/*.zip
-            bin/*.7z
+            bin/*
           if-no-files-found: ignore
 
   publish-release:
@@ -74,13 +72,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-      - name: Publish GitHub Release with all packaged files
+      - name: Publish GitHub Release with unpackaged binaries
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/**/*.tar.gz
-            dist/**/*.zip
-            dist/**/*.7z
+            dist/**/*
           prerelease: ${{ contains(env.GIT_TAG, 'rc') }}
 
   release-docker-images:

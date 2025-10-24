@@ -9,6 +9,7 @@ import (
 	"github.com/bililive-go/bililive-go/src/instance"
 	"github.com/bililive-go/bililive-go/src/notify/email"
 	"github.com/bililive-go/bililive-go/src/notify/telegram"
+	"github.com/bililive-go/bililive-go/src/notify/ntfy"
 )
 
 // SendNotification 发送统一通知函数
@@ -79,6 +80,31 @@ func SendNotification(ctx context.Context, hostName, platform, liveURL, status s
 				logger.Logger.WithError(err).Error("Failed to send email")
 			} else {
 				fmt.Printf("[ERROR] Failed to send email: %v\n", err)
+			}
+		}
+	}
+
+	// 检查是否开启了Ntfy通知服务
+	if cfg.Notify.Ntfy.Enable {
+		// 获取scheme URL
+		schemeURL := ntfy.GetSchemeURL(hostName)
+		
+		// 发送Ntfy通知
+		err := ntfy.SendMessage(
+			cfg.Notify.Ntfy.URL,
+			cfg.Notify.Ntfy.Token,
+			cfg.Notify.Ntfy.Tag,
+			hostName,
+			platform,
+			liveURL,
+			schemeURL,
+		)
+		if err != nil {
+			// 使用项目原来的日志打印方式打印错误
+			if logger != nil && logger.Logger != nil {
+				logger.Logger.WithError(err).Error("Failed to send Ntfy message")
+			} else {
+				fmt.Printf("[ERROR] Failed to send Ntfy message: %v\n", err)
 			}
 		}
 	}
