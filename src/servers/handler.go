@@ -520,9 +520,9 @@ func getLogs(writer http.ResponseWriter, r *http.Request) {
 	
 	// Check if log file exists
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-		writeJSON(writer, map[string]any{
-			"logs": "",
-			"error": "日志文件不存在",
+		writeJsonWithStatusCode(writer, http.StatusNotFound, commonResp{
+			ErrNo:  http.StatusNotFound,
+			ErrMsg: "日志文件不存在",
 		})
 		return
 	}

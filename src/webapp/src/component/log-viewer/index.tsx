@@ -10,10 +10,6 @@ import './log-viewer.css';
 
 const api = new API();
 
-interface Props {
-
-}
-
 interface IState {
     logs: string
     loading: boolean
@@ -23,10 +19,11 @@ interface IState {
     autoRefresh: boolean
 }
 
-class LogViewer extends React.Component<Props, IState> {
+class LogViewer extends React.Component<{}, IState> {
     private refreshInterval: any = null;
+    private logsContainerRef = React.createRef<HTMLDivElement>();
 
-    constructor(props: Props) {
+    constructor(props: {}) {
         super(props);
         this.state = {
             logs: "",
@@ -50,9 +47,9 @@ class LogViewer extends React.Component<Props, IState> {
         this.setState({ loading: true, error: "" });
         api.getLogs()
             .then((rsp: any) => {
-                if (rsp.error) {
+                if (rsp.err_msg) {
                     this.setState({
-                        error: rsp.error,
+                        error: rsp.err_msg,
                         loading: false
                     });
                 } else {
@@ -65,9 +62,8 @@ class LogViewer extends React.Component<Props, IState> {
                     });
                     // Auto scroll to bottom
                     setTimeout(() => {
-                        const logsContainer = document.getElementById('logs-container');
-                        if (logsContainer) {
-                            logsContainer.scrollTop = logsContainer.scrollHeight;
+                        if (this.logsContainerRef.current) {
+                            this.logsContainerRef.current.scrollTop = this.logsContainerRef.current.scrollHeight;
                         }
                     }, 100);
                 }
@@ -147,7 +143,7 @@ class LogViewer extends React.Component<Props, IState> {
                     </div>
                 )}
                 <Spin spinning={this.state.loading}>
-                    <div id="logs-container" className="logs-container">
+                    <div ref={this.logsContainerRef} className="logs-container">
                         <pre className="logs-content">{this.state.logs || "暂无日志内容"}</pre>
                     </div>
                 </Spin>
