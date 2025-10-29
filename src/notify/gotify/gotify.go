@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -21,11 +22,22 @@ type GotifyMessage struct {
 // message: 消息内容
 // priority: 消息优先级 (0-10, 默认为5)
 func SendMessage(serverURL, token, title, message string, priority int) error {
+	// 验证serverURL格式
+	parsedURL, err := url.Parse(serverURL)
+	if err != nil {
+		return fmt.Errorf("invalid server URL: %w", err)
+	}
+	
+	// 确保使用HTTP或HTTPS协议
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("invalid URL scheme: must be http or https, got %s", parsedURL.Scheme)
+	}
+	
 	// 确保serverURL不以斜杠结尾
 	serverURL = strings.TrimSuffix(serverURL, "/")
 
 	// 构造完整URL
-	url := fmt.Sprintf("%s/message?token=%s", serverURL, token)
+	requestURL := fmt.Sprintf("%s/message?token=%s", serverURL, token)
 
 	msg := GotifyMessage{
 		Title:    title,
@@ -38,7 +50,7 @@ func SendMessage(serverURL, token, title, message string, priority int) error {
 		return fmt.Errorf("failed to encode message: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

@@ -1,6 +1,7 @@
 package gotify
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -48,4 +49,28 @@ func TestSendMessageEmptyToken(t *testing.T) {
 	// 这里不检查err是否为nil，因为可能连接失败或服务器拒绝
 	// 主要确保函数不会panic
 	_ = err
+}
+
+// TestSendMessageInvalidScheme 测试无效的URL协议
+func TestSendMessageInvalidScheme(t *testing.T) {
+	// 测试使用非HTTP/HTTPS协议应该返回错误
+	err := SendMessage("ftp://example.com", "test-token", "测试标题", "测试内容", 5)
+	if err == nil {
+		t.Error("Expected error when using invalid URL scheme, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid URL scheme") {
+		t.Errorf("Expected 'invalid URL scheme' error, got: %v", err)
+	}
+}
+
+// TestSendMessageMalformedURL 测试格式错误的URL
+func TestSendMessageMalformedURL(t *testing.T) {
+	// 测试格式错误的URL应该返回错误
+	err := SendMessage("://invalid", "test-token", "测试标题", "测试内容", 5)
+	if err == nil {
+		t.Error("Expected error when using malformed URL, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid server URL") {
+		t.Errorf("Expected 'invalid server URL' error, got: %v", err)
+	}
 }
