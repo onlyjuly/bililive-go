@@ -10,6 +10,8 @@ import './log-viewer.css';
 
 const api = new API();
 
+const AUTO_REFRESH_INTERVAL_MS = 3000; // 自动刷新间隔（毫秒）
+
 interface IState {
     logs: string
     loading: boolean
@@ -20,7 +22,7 @@ interface IState {
 }
 
 class LogViewer extends React.Component<{}, IState> {
-    private refreshInterval: any = null;
+    private refreshInterval: NodeJS.Timeout | null = null;
     private logsContainerRef = React.createRef<HTMLDivElement>();
 
     constructor(props: {}) {
@@ -88,7 +90,7 @@ class LogViewer extends React.Component<{}, IState> {
         this.setState({ autoRefresh: true });
         this.refreshInterval = setInterval(() => {
             this.fetchLogs();
-        }, 3000); // Refresh every 3 seconds
+        }, AUTO_REFRESH_INTERVAL_MS);
     }
 
     stopAutoRefresh = () => {

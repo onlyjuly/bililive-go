@@ -27,6 +27,11 @@ import (
 	"github.com/bililive-go/bililive-go/src/types"
 )
 
+const (
+	// Maximum number of log lines to return
+	maxLogLines = 1000
+)
+
 // FIXME: remove this
 func parseInfo(ctx context.Context, l live.Live) *live.Info {
 	inst := instance.GetInstance(ctx)
@@ -539,10 +544,9 @@ func getLogs(writer http.ResponseWriter, r *http.Request) {
 	
 	// Return the last N lines (default 1000 lines)
 	lines := strings.Split(string(content), "\n")
-	maxLines := 1000
 	startIndex := 0
-	if len(lines) > maxLines {
-		startIndex = len(lines) - maxLines
+	if len(lines) > maxLogLines {
+		startIndex = len(lines) - maxLogLines
 	}
 	
 	resultLines := lines[startIndex:]
