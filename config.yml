@@ -70,3 +70,12 @@ notify:
     senderPassword: ""
     # 接收者邮箱地址 
     recipientEmail: ""
+  gotify:
+    # 是否开启Gotify通知
+    enable: false
+    # Gotify服务器地址 (例如: http://192.168.1.100:8080 或 https://gotify.example.com)
+    serverURL: ""
+    # Gotify应用Token (在Gotify服务器的应用设置中获取)
+    token: ""
+    # 消息优先级 (0-10, 数值越大优先级越高, 默认为5)
+    priority: 5
