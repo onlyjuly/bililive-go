@@ -522,7 +522,7 @@ func putLiveHostCookie(writer http.ResponseWriter, r *http.Request) {
 func getLogs(writer http.ResponseWriter, r *http.Request) {
 	inst := instance.GetInstance(r.Context())
 	logPath := filepath.Join(inst.Config.Log.OutPutFolder, "bililive-go.log")
-	
+
 	// Check if log file exists
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		writeJsonWithStatusCode(writer, http.StatusNotFound, commonResp{
@@ -531,7 +531,7 @@ func getLogs(writer http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	// Read the log file
 	content, err := os.ReadFile(logPath)
 	if err != nil {
@@ -541,19 +541,19 @@ func getLogs(writer http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	// Return the last N lines (default 1000 lines)
 	lines := strings.Split(string(content), "\n")
 	startIndex := 0
 	if len(lines) > maxLogLines {
 		startIndex = len(lines) - maxLogLines
 	}
-	
+
 	resultLines := lines[startIndex:]
 	result := strings.Join(resultLines, "\n")
-	
+
 	writeJSON(writer, map[string]any{
-		"logs": result,
+		"logs":        result,
 		"total_lines": len(lines),
 		"shown_lines": len(resultLines),
 	})
