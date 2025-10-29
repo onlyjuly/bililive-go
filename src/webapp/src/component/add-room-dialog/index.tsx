@@ -93,7 +93,7 @@ class AddRoomDialog extends React.Component<Props> {
                     <TextArea 
                         rows={6} 
                         value={textView} 
-                        placeholder="https://live.bilibili.com/123&#10;https://www.douyu.com/456&#10;https://www.huya.com/789" 
+                        placeholder={"https://live.bilibili.com/123\nhttps://www.douyu.com/456\nhttps://www.huya.com/789"} 
                         onChange={this.textChange} 
                     />
                 </Modal>
