@@ -68,6 +68,7 @@ type Log struct {
 type Notify struct {
 	Telegram Telegram `yaml:"telegram"`
 	Email    Email    `yaml:"email"`
+	Ntfy     Ntfy     `yaml:"ntfy"`
 }
 
 type Telegram struct {
@@ -84,6 +85,13 @@ type Email struct {
 	SenderEmail    string `yaml:"senderEmail"`
 	SenderPassword string `yaml:"senderPassword"`
 	RecipientEmail string `yaml:"recipientEmail"`
+}
+
+type Ntfy struct {
+	Enable bool   `yaml:"enable"`
+	URL    string `yaml:"URL"`
+	Token  string `yaml:"token"`
+	Tag    string `yaml:"tag"`
 }
 
 // Config content all config info.
@@ -130,6 +138,7 @@ type LiveRoom struct {
 	Quality     int          `yaml:"quality,omitempty"`
 	AudioOnly   bool         `yaml:"audio_only,omitempty"`
 	NickName    string       `yaml:"nick_name,omitempty"`
+	SchemeUrl   string       `yaml:"scheme"`
 }
 
 type liveRoomAlias LiveRoom
@@ -205,6 +214,12 @@ var defaultConfig = Config{
 			SenderEmail:    "",
 			SenderPassword: "",
 			RecipientEmail: "",
+		},
+		Ntfy: Ntfy{
+			Enable: false,
+			URL:    "",
+			Token:  "",
+			Tag:    "",
 		},
 	},
 	AppDataPath:        "",
