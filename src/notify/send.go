@@ -86,23 +86,38 @@ func SendNotification(ctx context.Context, hostName, platform, liveURL, status s
 
 	// 检查是否开启了Ntfy通知服务
 	if cfg.Notify.Ntfy.Enable {
-		// 从配置中获取scheme URL
-		var schemeUrl string
-		// 根据liveURL查找对应的LiveRoom配置
-		if liveRoom, err := cfg.GetLiveRoomByUrl(liveURL); err == nil {
-			schemeUrl = liveRoom.SchemeUrl
+		// 根据不同的状态发送不同的ntfy消息
+		var err error
+		if status == consts.LiveStatusStart {
+			// 从配置中获取scheme URL
+			var schemeUrl string
+			// 根据liveURL查找对应的LiveRoom配置
+			if liveRoom, err := cfg.GetLiveRoomByUrl(liveURL); err == nil {
+				schemeUrl = liveRoom.SchemeUrl
+			}
+
+			// 发送Ntfy开始录制通知
+			err = ntfy.SendMessage(
+				cfg.Notify.Ntfy.URL,
+				cfg.Notify.Ntfy.Token,
+				cfg.Notify.Ntfy.Tag,
+				hostName,
+				platform,
+				liveURL,
+				schemeUrl,
+			)
+		} else if status == consts.LiveStatusStop {
+			// 发送Ntfy停止录制通知
+			err = ntfy.SendStopMessage(
+				cfg.Notify.Ntfy.URL,
+				cfg.Notify.Ntfy.Token,
+				cfg.Notify.Ntfy.Tag,
+				hostName,
+				platform,
+				liveURL,
+			)
 		}
 
-		// 发送Ntfy通知
-		err := ntfy.SendMessage(
-			cfg.Notify.Ntfy.URL,
-			cfg.Notify.Ntfy.Token,
-			cfg.Notify.Ntfy.Tag,
-			hostName,
-			platform,
-			liveURL,
-			schemeUrl,
-		)
 		if err != nil {
 			// 使用项目原来的日志打印方式打印错误
 			if logger != nil && logger.Logger != nil {
