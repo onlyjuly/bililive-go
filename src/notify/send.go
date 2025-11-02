@@ -85,7 +85,7 @@ func SendNotification(ctx context.Context, hostName, platform, liveURL, status s
 	}
 
 	// 构造ntfy消息内容
-	ntfyMessage := fmt.Sprintf("平台：%s，%s", platform, messageStatus)
+	ntfyMessage := fmt.Sprintf("平台：%s,%s", platform, messageStatus)
 
 	// 检查是否开启了Ntfy通知服务
 	if cfg.Notify.Ntfy.Enable {
