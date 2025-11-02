@@ -88,11 +88,12 @@ func SendNotification(ctx context.Context, hostName, platform, liveURL, status s
 	if cfg.Notify.Ntfy.Enable {
 		// 根据不同的状态发送不同的ntfy消息
 		var err error
-		if status == consts.LiveStatusStart {
+		switch status {
+		case consts.LiveStatusStart:
 			// 从配置中获取scheme URL
 			var schemeUrl string
 			// 根据liveURL查找对应的LiveRoom配置
-			if liveRoom, err := cfg.GetLiveRoomByUrl(liveURL); err == nil {
+			if liveRoom, lookupErr := cfg.GetLiveRoomByUrl(liveURL); lookupErr == nil {
 				schemeUrl = liveRoom.SchemeUrl
 			}
 
@@ -106,7 +107,7 @@ func SendNotification(ctx context.Context, hostName, platform, liveURL, status s
 				liveURL,
 				schemeUrl,
 			)
-		} else if status == consts.LiveStatusStop {
+		case consts.LiveStatusStop:
 			// 发送Ntfy停止录制通知
 			err = ntfy.SendStopMessage(
 				cfg.Notify.Ntfy.URL,
