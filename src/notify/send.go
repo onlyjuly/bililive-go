@@ -84,41 +84,19 @@ func SendNotification(ctx context.Context, hostName, platform, liveURL, status s
 		}
 	}
 
+	// 构造ntfy消息内容
+	ntfyMessage := fmt.Sprintf("平台：%s，%s", platform, messageStatus)
+
 	// 检查是否开启了Ntfy通知服务
 	if cfg.Notify.Ntfy.Enable {
-		// 根据不同的状态发送不同的ntfy消息
-		var err error
-		switch status {
-		case consts.LiveStatusStart:
-			// 从配置中获取scheme URL
-			var schemeUrl string
-			// 根据liveURL查找对应的LiveRoom配置
-			if liveRoom, lookupErr := cfg.GetLiveRoomByUrl(liveURL); lookupErr == nil {
-				schemeUrl = liveRoom.SchemeUrl
-			}
-
-			// 发送Ntfy开始录制通知
-			err = ntfy.SendMessage(
-				cfg.Notify.Ntfy.URL,
-				cfg.Notify.Ntfy.Token,
-				cfg.Notify.Ntfy.Tag,
-				hostName,
-				platform,
-				liveURL,
-				schemeUrl,
-			)
-		case consts.LiveStatusStop:
-			// 发送Ntfy停止录制通知
-			err = ntfy.SendStopMessage(
-				cfg.Notify.Ntfy.URL,
-				cfg.Notify.Ntfy.Token,
-				cfg.Notify.Ntfy.Tag,
-				hostName,
-				platform,
-				liveURL,
-			)
-		}
-
+		err := ntfy.SendMessage(
+			cfg.Notify.Ntfy.URL,
+			cfg.Notify.Ntfy.Token,
+			cfg.Notify.Ntfy.Tag,
+			hostName,
+			ntfyMessage,
+			liveURL,
+		)
 		if err != nil {
 			// 使用项目原来的日志打印方式打印错误
 			if logger != nil && logger.Logger != nil {

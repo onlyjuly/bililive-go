@@ -35,19 +35,6 @@ https://wx.mail.qq.com/list/readtemplate?name=app_intro.html#/agreement/authoriz
 
 ntfy是一个开源的推送通知服务，您可以使用公共服务器 https://ntfy.sh 或者搭建自己的ntfy服务器
 
-#### scheme URL配置
-
-在直播间配置中，您可以为每个直播间设置一个scheme URL，当开始录制的ntfy通知被触发时，该URL将作为Click头部添加到通知中，用户在手机端点击通知时会跳转到该URL
-
-配置方法是在直播间的配置中添加scheme字段：
-
-```yaml
-live_rooms:
-  - url: "https://live.bilibili.com/123456"
-    is_listening: true
-    scheme: "bilibili://live/123456"  # 这里设置scheme URL
-```
-
 ## 配置说明
 
 在配置文件中启用相应的通知服务：
@@ -72,8 +59,8 @@ notify:
   ntfy:
     enable: true                # 是否启用ntfy通知
     URL: "https://ntfy.sh/your-topic"  # ntfy服务器地址和主题
-    token: "your-token"         # 如果需要认证，填写访问令牌
-    tag: "new"                  # 消息标签
+    token: "tk_xxxx"            # 如果需要认证，填写tk_开头的访问令牌
+    tag: "new"                  # 消息emoji标签。支持列表：https://docs.ntfy.sh/emojis/
 ```
 
 ## 注意事项

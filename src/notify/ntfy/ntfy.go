@@ -21,9 +21,7 @@ type NtfyAction struct {
 }
 
 // sendNtfyRequest 发送ntfy请求的通用函数
-func sendNtfyRequest(url, token, tag, hostname, message, liveURL, schemeUrl string) error {
-	title := hostname
-
+func sendNtfyRequest(url, token, tag, hostname, message, liveURL string) error {
 	// 创建HTTP请求
 	req, err := http.NewRequest("POST", url, strings.NewReader(message))
 	if err != nil {
@@ -32,14 +30,8 @@ func sendNtfyRequest(url, token, tag, hostname, message, liveURL, schemeUrl stri
 
 	// 设置必要的请求头
 	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Set("Title", title)
+	req.Header.Set("Title", hostname)
 	req.Header.Set("Tags", tag)
-
-	// 如果提供了scheme URL，则设置Click头
-	// Click 是ntfy API的标准头部字段，用于在通知中添加点击行为（如跳转到schemeUrl）
-	if schemeUrl != "" {
-		req.Header.Set("Click", schemeUrl)
-	}
 
 	// 设置Actions头，用于打开直播间
 	if liveURL != "" {
@@ -86,20 +78,7 @@ func sendNtfyRequest(url, token, tag, hostname, message, liveURL, schemeUrl stri
 	return nil
 }
 
-// SendMessage 发送ntfy开始录制消息
-func SendMessage(url, token, tag, hostname, platform, liveURL, schemeUrl string) error {
-	// 构造消息内容
-	message := fmt.Sprintf("%s正在录制中", platform)
-
-	// 发送请求
-	return sendNtfyRequest(url, token, tag, hostname, message, liveURL, schemeUrl)
-}
-
-// SendStopMessage 发送ntfy停止录制消息
-func SendStopMessage(url, token, tag, hostname, platform, liveURL string) error {
-	// 构造消息内容
-	message := fmt.Sprintf("%s录制已停止", platform)
-
-	// 发送请求，注意停止录制通知不使用schemeUrl
-	return sendNtfyRequest(url, token, tag, hostname, message, liveURL, "")
+// SendMessage 发送ntfy消息
+func SendMessage(url, token, tag, hostname, message, liveURL string) error {
+	return sendNtfyRequest(url, token, tag, hostname, message, liveURL)
 }
