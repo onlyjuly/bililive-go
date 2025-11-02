@@ -36,6 +36,7 @@ func sendNtfyRequest(url, token, tag, hostname, message, liveURL, schemeUrl stri
 	req.Header.Set("Tags", tag)
 
 	// 如果提供了scheme URL，则设置Click头
+	// Click 是ntfy API的标准头部字段，用于在通知中添加点击行为（如跳转到schemeUrl）
 	if schemeUrl != "" {
 		req.Header.Set("Click", schemeUrl)
 	}
